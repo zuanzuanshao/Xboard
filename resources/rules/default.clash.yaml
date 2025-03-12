@@ -44,6 +44,101 @@ proxy-groups:
 rules:
   # 自定义规则
   ## 您可以在此处插入您补充的自定义规则（请注意保持缩进）
+  # AI Rules
+  - DOMAIN-SUFFIX,ai.com,$app_name
+  - DOMAIN-SUFFIX,chatgpt.com,$app_name
+  - DOMAIN-SUFFIX,openai.com,$app_name
+  - DOMAIN,chat.openai.com.cdn.cloudflare.net,$app_name
+  - DOMAIN,openaiapi-site.azureedge.net,$app_name
+  - DOMAIN,openaicom-api-bdcpf8c6d2e9atf6.z01.azurefd.net,$app_name
+  - DOMAIN,openaicomproductionae4b.blob.core.windows.net,$app_name
+  - DOMAIN,production-openaicom-storage.azureedge.net,$app_name
+  - DOMAIN-SUFFIX,cdn.oaistatic.com,$app_name
+  - DOMAIN-SUFFIX,oaiusercontent.com,$app_name
+  - DOMAIN,o33249.ingest.sentry.io,$app_name
+  - DOMAIN-SUFFIX,anthropic.com,$app_name
+  - DOMAIN-SUFFIX,claude.ai,$app_name
+  - DOMAIN-SUFFIX,claudeusercontent.com,$app_name
+  - DOMAIN,gateway.ai.cloudflare.com,$app_name
+  - DOMAIN-SUFFIX,githubcopilot.com,$app_name
+  - DOMAIN,copilot.microsoft.com,$app_name
+  - DOMAIN-SUFFIX,dify.ai,$app_name
+  - DOMAIN,api.github.com,$app_name
+  - DOMAIN-SUFFIX,bard.google.com,$app_name
+  - DOMAIN-SUFFIX,gemini.google.com,$app_name
+  - DOMAIN-SUFFIX,deepmind.com,$app_name
+  - DOMAIN-SUFFIX,deepmind.google,$app_name
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com,$app_name
+  - DOMAIN-SUFFIX,geller-pa.googleapis.com,$app_name
+  - DOMAIN-SUFFIX,proactivebackend-pa.googleapis.com,$app_name
+  - DOMAIN-KEYWORD,alkalimakersuite-pa.clients6.google.com,$app_name
+  - DOMAIN-SUFFIX,aistudio.google.com,$app_name
+  - DOMAIN-SUFFIX,makersuite.google.com,$app_name
+  - DOMAIN-SUFFIX,generativeai.google,$app_name
+  - DOMAIN,ai.google.dev,$app_name
+  - DOMAIN,alkalicore-pa.clients6.google.com,$app_name
+  - DOMAIN,waa-pa.clients6.google.com,$app_name
+  - DOMAIN-SUFFIX,notebooklm.google,$app_name
+  - DOMAIN-SUFFIX,notebooklm.google.com,$app_name
+  - DOMAIN-SUFFIX,groq.com,$app_name
+  - DOMAIN-SUFFIX,clipdrop.co,$app_name
+  - DOMAIN-SUFFIX,jasper.ai,$app_name
+  - DOMAIN-SUFFIX,meta.ai,$app_name
+  - DOMAIN-SUFFIX,openart.ai,$app_name
+  - DOMAIN-SUFFIX,perplexity.ai,$app_name
+  - DOMAIN-SUFFIX,poe.com,$app_name
+  - DOMAIN,apple-relay.apple.com,$app_name
+  - DOMAIN,apple-relay.cloudflare.com,$app_name
+  - DOMAIN,guzzoni.smoot.apple.com,$app_name
+  - DOMAIN-SUFFIX,sora.com,$app_name
+  - DOMAIN,sora-cdn.oaistatic.com,$app_name
+
+  # 美卡服务
+  - DOMAIN-SUFFIX,americanexpress.com,$app_name
+  - DOMAIN-SUFFIX,premiumlinks.net, DIRECT
+  - DOMAIN-SUFFIX,equifax.com,$app_name
+  - DOMAIN-SUFFIX,verizon.com,$app_name
+  - DOMAIN-SUFFIX,criteo.com,$app_name
+  - DOMAIN-SUFFIX,akamaihd.net,$app_name
+  - DOMAIN-SUFFIX,criteo.com,$app_name
+  - DOMAIN-SUFFIX,intuit.com,$app_name
+  - DOMAIN-SUFFIX,ckapis.com,$app_name
+  - DOMAIN-SUFFIX,creditkarma.com,$app_name
+  - DOMAIN-SUFFIX,webullfintech.com,$app_name
+  - DOMAIN-SUFFIX,zellepay.com,$app_name
+  - DOMAIN-SUFFIX,kraken.com,$app_name 
+  - DOMAIN-SUFFIX,plaid.com,$app_name 
+  - DOMAIN-SUFFIX,mail.com,$app_name 
+  - DOMAIN-SUFFIX,annualcreditreport.com,$app_name 
+  - DOMAIN-SUFFIX,transunion.com,$app_name 
+  - DOMAIN-SUFFIX,worldcoin.org,$app_name 
+  - DOMAIN-SUFFIX,x.com,$app_name
+  - DOMAIN-SUFFIX,iproyal.com,$app_name
+  - DOMAIN-SUFFIX,tradeup.com,$app_name 
+  - DOMAIN-SUFFIX,voice.google.com,$app_name
+  - DOMAIN-SUFFIX,spectrum.com,$app_name
+  - DOMAIN-SUFFIX,myfico.com,$app_name 
+  - DOMAIN-SUFFIX,byabcde.com,$app_name 
+  - DOMAIN-SUFFIX,revolut.com,$app_name 
+  - DOMAIN-SUFFIX,sofi.com,$app_name 
+  - DOMAIN-SUFFIX,cloudflare.com,$app_name 
+  - DOMAIN-SUFFIX,google.com,$app_name
+  - DOMAIN-SUFFIX,google.dev,$app_name 
+  - DOMAIN-SUFFIX,revolut.com,$app_name 
+  - DOMAIN-SUFFIX,bloom.co,$app_name 
+  - DOMAIN-SUFFIX,googleapis.com,$app_name 
+  - DOMAIN-SUFFIX,ultramobile.com,$app_name 
+  - DOMAIN-SUFFIX,webshare.io,$app_name
+  - DOMAIN-SUFFIX,coinbase.com,$app_name 
+  - DOMAIN-SUFFIX,revolut.com,$app_name 
+  - DOMAIN-SUFFIX,ultramobile.com,$app_name 
+  - DOMAIN-SUFFIX,wise.com,$app_name 
+  - DOMAIN-SUFFIX,capitalone.com,$app_name 
+
+  # ip检查
+  - DOMAIN-SUFFIX,ping0.cc,$app_name
+  - DOMAIN-SUFFIX,ipinfo.io,$app_name
+  - DOAMIn-SUFFIX,ipdata.co,$app_name
 
   # Google 中国服务
   - DOMAIN-SUFFIX,services.googleapis.cn,$app_name
