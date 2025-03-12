@@ -138,7 +138,7 @@ rules:
   # ip检查
   - DOMAIN-SUFFIX,ping0.cc,$app_name
   - DOMAIN-SUFFIX,ipinfo.io,$app_name
-  - DOAMIn-SUFFIX,ipdata.co,$app_name
+  - DOMAIN-SUFFIX,ipdata.co,$app_name
 
   # Google 中国服务
   - DOMAIN-SUFFIX,services.googleapis.cn,$app_name
