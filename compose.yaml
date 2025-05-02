@@ -16,7 +16,7 @@ services:
     command: php artisan octane:start --host=0.0.0.0 --port=7001
     restart: on-failure
     ports:
-      - 7001:7001
+      - 7003:7001
   horizon:
     image: ghcr.io/cedar2025/xboard:new
     volumes:
@@ -32,6 +32,8 @@ services:
       - redis
   redis:
     image: redis:7-alpine
+    ports:
+      - "6380:6379"
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
     restart: unless-stopped
     volumes:
