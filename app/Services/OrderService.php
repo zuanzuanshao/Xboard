@@ -7,7 +7,10 @@ use App\Jobs\OrderHandleJob;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
+use App\Services\Plugin\HookManager;
+use App\Utils\Helper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -25,6 +28,62 @@ class OrderService
     public function __construct(Order $order)
     {
         $this->order = $order;
+    }
+
+    /**
+     * Create an order from a request.
+     *
+     * @param User $user
+     * @param Plan $plan
+     * @param string $period
+     * @param string|null $couponCode
+     * @param array|null $telegramMessageIds
+     * @return Order
+     * @throws ApiException
+     */
+    public static function createFromRequest(
+        User $user,
+        Plan $plan,
+        string $period,
+        ?string $couponCode = null,
+    ): Order {
+        $userService = app(UserService::class);
+        $planService = new PlanService($plan);
+
+        $planService->validatePurchase($user, $period);
+
+        return DB::transaction(function () use ($user, $plan, $period, $couponCode, $userService) {
+            $newPeriod = PlanService::getPeriodKey($period);
+
+            $order = new Order([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'period' => $newPeriod,
+                'trade_no' => Helper::generateOrderNo(),
+                'total_amount' => (int) (optional($plan->prices)[$newPeriod] * 100),
+            ]);
+
+            $orderService = new self($order);
+
+            if ($couponCode) {
+                $orderService->applyCoupon($couponCode);
+            }
+
+            $orderService->setVipDiscount($user);
+            $orderService->setOrderType($user);
+            $orderService->setInvite($user);
+
+            if ($user->balance && $order->total_amount > 0) {
+                $orderService->handleUserBalance($user, $userService);
+            }
+
+            if (!$order->save()) {
+                throw new ApiException(__('Failed to create order'));
+            }
+            HookManager::call('order.after_create', $order);
+
+            return $order;
+        });
     }
 
     public function open()
@@ -79,7 +138,7 @@ class OrderService
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             throw new ApiException('开通失败');
         }
     }
@@ -97,10 +156,10 @@ class OrderService
             if ((int) admin_setting('surplus_enable', 1))
                 $this->getSurplusValue($user, $order);
             if ($order->surplus_amount >= $order->total_amount) {
-                $order->refund_amount = $order->surplus_amount - $order->total_amount;
+                $order->refund_amount = (int) ($order->surplus_amount - $order->total_amount);
                 $order->total_amount = 0;
             } else {
-                $order->total_amount = $order->total_amount - $order->surplus_amount;
+                $order->total_amount = (int) ($order->total_amount - $order->surplus_amount);
             }
         } else if ($user->expired_at > time() && $order->plan_id == $user->plan_id) { // 用户订阅未过期且购买订阅与当前订阅相同 === 续费
             $order->type = Order::TYPE_RENEWAL;
@@ -127,30 +186,30 @@ class OrderService
         $inviter = User::find($user->invite_user_id);
         if (!$inviter)
             return;
+        $commissionType = (int) $inviter->commission_type;
+        if ($commissionType === User::COMMISSION_TYPE_SYSTEM) {
+            $commissionType = (bool) admin_setting('commission_first_time_enable', true) ? User::COMMISSION_TYPE_ONETIME : User::COMMISSION_TYPE_PERIOD;
+        }
         $isCommission = false;
-        switch ((int) $inviter->commission_type) {
-            case 0:
-                $commissionFirstTime = (int) admin_setting('commission_first_time_enable', 1);
-                $isCommission = (!$commissionFirstTime || ($commissionFirstTime && !$this->haveValidOrder($user)));
-                break;
-            case 1:
+        switch ($commissionType) {
+            case User::COMMISSION_TYPE_PERIOD:
                 $isCommission = true;
                 break;
-            case 2:
+            case User::COMMISSION_TYPE_ONETIME:
                 $isCommission = !$this->haveValidOrder($user);
                 break;
         }
 
         if (!$isCommission)
             return;
-        if ($inviter && $inviter->commission_rate) {
+        if ($inviter->commission_rate) {
             $order->commission_balance = $order->total_amount * ($inviter->commission_rate / 100);
         } else {
             $order->commission_balance = $order->total_amount * (admin_setting('invite_commission', 10) / 100);
         }
     }
 
-    private function haveValidOrder(User $user)
+    private function haveValidOrder(User $user): Order|null
     {
         return Order::where('user_id', $user->id)
             ->whereNotIn('status', [0, 2])
@@ -186,7 +245,7 @@ class OrderService
         $notUsedTraffic = $nowUserTraffic - (($user->u + $user->d) / 1073741824);
         $result = $trafficUnitPrice * $notUsedTraffic;
         $orderModel = Order::where('user_id', $user->id)->where('period', '!=', Plan::PERIOD_RESET_TRAFFIC)->where('status', Order::STATUS_COMPLETED);
-        $order->surplus_amount = $result > 0 ? $result : 0;
+        $order->surplus_amount = (int) ($result > 0 ? $result : 0);
         $order->surplus_order_ids = array_column($orderModel->get()->toArray(), 'id');
     }
 
@@ -221,7 +280,7 @@ class OrderService
         $orderSurplusAmount = $avgPrice * $orderSurplusSecond;
         if (!$orderSurplusSecond || !$orderSurplusAmount)
             return;
-        $order->surplus_amount = $orderSurplusAmount > 0 ? $orderSurplusAmount : 0;
+        $order->surplus_amount = (int) ($orderSurplusAmount > 0 ? $orderSurplusAmount : 0);
         $order->surplus_order_ids = array_column($orders, 'id');
     }
 
@@ -238,7 +297,7 @@ class OrderService
         try {
             OrderHandleJob::dispatchSync($order->trade_no);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return false;
         }
         return true;
@@ -341,6 +400,34 @@ class OrderService
             case 1:
                 $this->buyByResetTraffic();
                 break;
+        }
+    }
+
+    protected function applyCoupon(string $couponCode): void
+    {
+        $couponService = new CouponService($couponCode);
+        if (!$couponService->use($this->order)) {
+            throw new ApiException(__('Coupon failed'));
+        }
+        $this->order->coupon_id = $couponService->getId();
+    }
+
+    protected function handleUserBalance(User $user, UserService $userService): void
+    {
+        $remainingBalance = $user->balance - $this->order->total_amount;
+
+        if ($remainingBalance >= 0) {
+            if (!$userService->addBalance($this->order->user_id, -$this->order->total_amount)) {
+                throw new ApiException(__('Insufficient balance'));
+            }
+            $this->order->balance_amount = $this->order->total_amount;
+            $this->order->total_amount = 0;
+        } else {
+            if (!$userService->addBalance($this->order->user_id, -$user->balance)) {
+                throw new ApiException(__('Insufficient balance'));
+            }
+            $this->order->balance_amount = $user->balance;
+            $this->order->total_amount = $this->order->total_amount - $user->balance;
         }
     }
 }

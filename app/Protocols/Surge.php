@@ -3,24 +3,24 @@
 namespace App\Protocols;
 
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
+use Illuminate\Support\Facades\File;
+use App\Support\AbstractProtocol;
 
-class Surge implements ProtocolInterface
+class Surge extends AbstractProtocol
 {
     public $flags = ['surge'];
-    private $servers;
-    private $user;
+    const CUSTOM_TEMPLATE_FILE = 'resources/rules/custom.surge.conf';
+    const DEFAULT_TEMPLATE_FILE = 'resources/rules/default.surge.conf';
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'surge' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '2398'
+                ],
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -59,17 +59,10 @@ class Surge implements ProtocolInterface
             }
         }
 
-        // 优先从 admin_setting 获取模板
-        $config = admin_setting('subscribe_template_surge');
-        if (empty($config)) {
-            $defaultConfig = base_path('resources/rules/default.surge.conf');
-            $customConfig = base_path('resources/rules/custom.surge.conf');
-            if (file_exists($customConfig)) {
-                $config = file_get_contents($customConfig);
-            } else {
-                $config = file_get_contents($defaultConfig);
-            }
-        }
+
+        $config = admin_setting('subscribe_template_surge', File::exists(base_path(self::CUSTOM_TEMPLATE_FILE))
+            ? File::get(base_path(self::CUSTOM_TEMPLATE_FILE))
+            : File::get(base_path(self::DEFAULT_TEMPLATE_FILE)));
 
         // Subscription link
         $subsDomain = request()->header('Host');
@@ -90,6 +83,7 @@ class Surge implements ProtocolInterface
         $config = str_replace('$subscribe_info', $subscribeInfo, $config);
 
         return response($config, 200)
+            ->header('content-type', 'application/octet-stream')
             ->header('content-disposition', "attachment;filename*=UTF-8''" . rawurlencode($appName) . ".conf");
     }
 
@@ -106,6 +100,32 @@ class Surge implements ProtocolInterface
             'tfo=true',
             'udp-relay=true'
         ];
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
         $config = array_filter($config);
         $uri = implode(',', $config);
         $uri .= "\r\n";
@@ -164,7 +184,7 @@ class Surge implements ProtocolInterface
             'udp-relay=true'
         ];
         if (!empty($protocol_settings['allow_insecure'])) {
-            array_push($config, $protocol_settings['allow_insecure'] ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
+            array_push($config, !!data_get($protocol_settings, 'allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false');
         }
         $config = array_filter($config);
         $uri = implode(',', $config);
@@ -183,13 +203,18 @@ class Surge implements ProtocolInterface
             "{$server['host']}",
             "{$server['port']}",
             "password={$password}",
-            "download-bandwidth={$protocol_settings['bandwidth']['up']}",
             $protocol_settings['tls']['server_name'] ? "sni={$protocol_settings['tls']['server_name']}" : "",
             // 'tfo=true', 
             'udp-relay=true'
         ];
+        if (data_get($protocol_settings, 'bandwidth.up')) {
+            $config[] = "upload-bandwidth={$protocol_settings['bandwidth']['up']}";
+        }
+        if (data_get($protocol_settings, 'bandwidth.down')) {
+            $config[] = "download-bandwidth={$protocol_settings['bandwidth']['down']}";
+        }
         if (data_get($protocol_settings, 'tls.allow_insecure')) {
-            $config[] = data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
+            $config[] = !!data_get($protocol_settings, 'tls.allow_insecure') ? 'skip-cert-verify=true' : 'skip-cert-verify=false';
         }
         $config = array_filter($config);
         $uri = implode(',', $config);

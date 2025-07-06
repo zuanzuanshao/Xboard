@@ -2,24 +2,21 @@
 
 namespace App\Protocols;
 
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
 
-class Loon implements ProtocolInterface
+class Loon extends AbstractProtocol
 {
     public $flags = ['loon'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'loon' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '637'
+                ],
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -31,12 +28,6 @@ class Loon implements ProtocolInterface
         foreach ($servers as $item) {
             if (
                 $item['type'] === 'shadowsocks'
-                && in_array(data_get($item['protocol_settings'], 'cipher'), [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
             ) {
                 $uri .= self::buildShadowsocks($item['password'], $item);
             }
@@ -50,14 +41,17 @@ class Loon implements ProtocolInterface
                 $uri .= self::buildHysteria($user['uuid'], $item, $user);
             }
         }
-        return response($uri, 200)
+        return response($uri)
+            ->header('content-type', 'text/plain')
             ->header('Subscription-Userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
     }
 
 
     public static function buildShadowsocks($password, $server)
     {
-        $cipher = data_get($server['protocol_settings'], 'cipher');
+        $protocol_settings = $server['protocol_settings'];
+        $cipher = data_get($protocol_settings, 'cipher');
+
         $config = [
             "{$server['name']}=Shadowsocks",
             "{$server['host']}",
@@ -67,9 +61,36 @@ class Loon implements ProtocolInterface
             'fast-open=false',
             'udp=true'
         ];
+
+        if (data_get($protocol_settings, 'plugin') && data_get($protocol_settings, 'plugin_opts')) {
+            $plugin = data_get($protocol_settings, 'plugin');
+            $pluginOpts = data_get($protocol_settings, 'plugin_opts', '');
+            // 解析插件选项
+            $parsedOpts = collect(explode(';', $pluginOpts))
+                ->filter()
+                ->mapWithKeys(function ($pair) {
+                    if (!str_contains($pair, '=')) {
+                        return [];
+                    }
+                    [$key, $value] = explode('=', $pair, 2);
+                    return [trim($key) => trim($value)];
+                })
+                ->all();
+            switch ($plugin) {
+                case 'obfs':
+                    $config[] = "obfs-name={$parsedOpts['obfs']}";
+                    if (isset($parsedOpts['obfs-host'])) {
+                        $config[] = "obfs-host={$parsedOpts['obfs-host']}";
+                    }
+                    if (isset($parsedOpts['path'])) {
+                        $config[] = "obfs-uri={$parsedOpts['path']}";
+                    }
+                    break;
+            }
+        }
+
         $config = array_filter($config);
-        $uri = implode(',', $config);
-        $uri .= "\r\n";
+        $uri = implode(',', $config) . "\r\n";
         return $uri;
     }
 

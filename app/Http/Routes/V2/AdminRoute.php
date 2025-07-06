@@ -16,9 +16,8 @@ use App\Http\Controllers\V2\Admin\KnowledgeController;
 use App\Http\Controllers\V2\Admin\PaymentController;
 use App\Http\Controllers\V2\Admin\SystemController;
 use App\Http\Controllers\V2\Admin\ThemeController;
-use App\Http\Controllers\V2\Admin\UpdateController;
+use App\Http\Controllers\V2\Admin\TrafficResetController;
 use Illuminate\Contracts\Routing\Registrar;
-use Illuminate\Support\Facades\Route;
 
 class AdminRoute
 {
@@ -193,15 +192,18 @@ class AdminRoute
                 $router->get('/getQueueWorkload', [SystemController::class, 'getQueueWorkload']);
                 $router->get('/getQueueMasters', '\\Laravel\\Horizon\\Http\\Controllers\\MasterSupervisorController@index');
                 $router->get('/getSystemLog', [SystemController::class, 'getSystemLog']);
+                $router->get('/getHorizonFailedJobs', [SystemController::class, 'getHorizonFailedJobs']);
+                $router->post('/clearSystemLog', [SystemController::class, 'clearSystemLog']);
+                $router->get('/getLogClearStats', [SystemController::class, 'getLogClearStats']);
             });
 
             // Update
-            $router->group([
-                'prefix' => 'update'
-            ], function ($router) {
-                $router->get('/check', [UpdateController::class, 'checkUpdate']);
-                $router->post('/execute', [UpdateController::class, 'executeUpdate']);
-            });
+            // $router->group([
+            //     'prefix' => 'update'
+            // ], function ($router) {
+            //     $router->get('/check', [UpdateController::class, 'checkUpdate']);
+            //     $router->post('/execute', [UpdateController::class, 'executeUpdate']);
+            // });
 
             // Theme
             $router->group([
@@ -227,6 +229,16 @@ class AdminRoute
                 $router->post('disable', [\App\Http\Controllers\V2\Admin\PluginController::class, 'disable']);
                 $router->get('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'getConfig']);
                 $router->post('config', [\App\Http\Controllers\V2\Admin\PluginController::class, 'updateConfig']);
+            });
+
+            // 流量重置管理
+            $router->group([
+                'prefix' => 'traffic-reset'
+            ], function ($router) {
+                $router->get('logs', [TrafficResetController::class, 'logs']);
+                $router->get('stats', [TrafficResetController::class, 'stats']);
+                $router->get('user/{userId}/history', [TrafficResetController::class, 'userHistory']);
+                $router->post('reset-user', [TrafficResetController::class, 'resetUser']);
             });
         });
 

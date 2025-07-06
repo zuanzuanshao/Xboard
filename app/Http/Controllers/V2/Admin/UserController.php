@@ -10,6 +10,7 @@ use App\Jobs\SendEmailJob;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\UserService;
 use App\Traits\QueryOperators;
 use App\Utils\Helper;
 use Illuminate\Database\Eloquent\Builder;
@@ -81,7 +82,7 @@ class UserController extends Controller
         // 处理关联查询
         if (str_contains($field, '.')) {
             [$relation, $relationField] = explode('.', $field);
-            $query->whereHas($relation, function($q) use ($relationField, $value) {
+            $query->whereHas($relation, function ($q) use ($relationField, $value) {
                 if (is_array($value)) {
                     $q->whereIn($relationField, $value);
                 } else if (is_string($value) && str_contains($value, ':')) {
@@ -163,7 +164,8 @@ class UserController extends Controller
         $users = $userModel->orderBy('id', 'desc')
             ->paginate($pageSize, ['*'], 'page', $current);
 
-        $users->getCollection()->transform(function ($user) {
+        /** @phpstan-ignore-next-line */
+        $users->getCollection()->transform(function ($user): array {
             return self::transformUserData($user);
         });
 
@@ -177,13 +179,14 @@ class UserController extends Controller
      * Transform user data for response
      *
      * @param User $user
-     * @return User
+     * @return array<string, mixed>
      */
-    public static function transformUserData(User $user): User
+    public static function transformUserData(User $user): array
     {
-        $user->subscribe_url = Helper::getSubscribeUrl($user->token);
-        $user->balance = $user->balance / 100;
-        $user->commission_balance = $user->commission_balance / 100;
+        $user = $user->toArray();
+        $user['balance'] = $user['balance'] / 100;
+        $user['commission_balance'] = $user['commission_balance'] / 100;
+        $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
         return $user;
     }
 
@@ -235,7 +238,7 @@ class UserController extends Controller
 
         if (isset($params['banned']) && (int) $params['banned'] === 1) {
             $authService = new AuthService($user);
-            $authService->removeSession();
+            $authService->removeAllSessions();
         }
         if (isset($params['balance'])) {
             $params['balance'] = $params['balance'] * 100;
@@ -263,7 +266,7 @@ class UserController extends Controller
     {
         ini_set('memory_limit', '-1');
         gc_enable(); // 启用垃圾回收
-        
+
         // 优化查询：使用with预加载plan关系，避免N+1问题
         $query = User::with('plan:id,name')
             ->orderBy('id', 'asc')
@@ -278,18 +281,18 @@ class UserController extends Controller
                 'token',
                 'plan_id'
             ]);
-            
+
         $this->applyFiltersAndSorts($request, $query);
-        
+
         $filename = 'users_' . date('Y-m-d_His') . '.csv';
-        
-        return response()->streamDownload(function() use ($query) {
+
+        return response()->streamDownload(function () use ($query) {
             // 打开输出流
             $output = fopen('php://output', 'w');
-            
+
             // 添加BOM标记，确保Excel正确显示中文
-            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-            
+            fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             // 写入CSV头部
             fputcsv($output, [
                 '邮箱',
@@ -301,9 +304,9 @@ class UserController extends Controller
                 '订阅计划',
                 '订阅地址'
             ]);
-            
+
             // 分批处理数据以减少内存使用
-            $query->chunk(500, function($users) use ($output) {
+            $query->chunk(500, function ($users) use ($output) {
                 foreach ($users as $user) {
                     try {
                         $row = [
@@ -325,11 +328,11 @@ class UserController extends Controller
                         continue; // 继续处理下一条记录
                     }
                 }
-                
+
                 // 清理内存
                 gc_collect_cycles();
             });
-            
+
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -340,79 +343,100 @@ class UserController extends Controller
     public function generate(UserGenerate $request)
     {
         if ($request->input('email_prefix')) {
-            if ($request->input('plan_id')) {
-                $plan = Plan::find($request->input('plan_id'));
-                if (!$plan) {
-                    return $this->fail([400202, '订阅计划不存在']);
-                }
-            }
-            $user = [
-                'email' => $request->input('email_prefix') . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
-                'uuid' => Helper::guid(true),
-                'token' => Helper::guid()
-            ];
-            if (User::where('email', $user['email'])->first()) {
+            $email = $request->input('email_prefix') . '@' . $request->input('email_suffix');
+
+            if (User::where('email', $email)->exists()) {
                 return $this->fail([400201, '邮箱已存在于系统中']);
             }
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            if (!User::create($user)) {
+
+            $userService = app(UserService::class);
+            $user = $userService->createUser([
+                'email' => $email,
+                'password' => $request->input('password') ?? $email,
+                'plan_id' => $request->input('plan_id'),
+                'expired_at' => $request->input('expired_at'),
+            ]);
+
+            if (!$user->save()) {
                 return $this->fail([500, '生成失败']);
             }
             return $this->success(true);
         }
+
         if ($request->input('generate_count')) {
-            $this->multiGenerate($request);
+            return $this->multiGenerate($request);
         }
     }
 
     private function multiGenerate(Request $request)
     {
-        if ($request->input('plan_id')) {
-            $plan = Plan::find($request->input('plan_id'));
-            if (!$plan) {
-                return $this->fail([400202, '订阅计划不存在']);
-            }
-        }
-        $users = [];
+        $userService = app(UserService::class);
+        $usersData = [];
+
         for ($i = 0; $i < $request->input('generate_count'); $i++) {
-            $user = [
-                'email' => Helper::randomChar(6) . '@' . $request->input('email_suffix'),
-                'plan_id' => isset($plan->id) ? $plan->id : NULL,
-                'group_id' => isset($plan->group_id) ? $plan->group_id : NULL,
-                'transfer_enable' => isset($plan->transfer_enable) ? $plan->transfer_enable * 1073741824 : 0,
-                'expired_at' => $request->input('expired_at') ?? NULL,
-                'uuid' => Helper::guid(true),
-                'token' => Helper::guid(),
-                'created_at' => time(),
-                'updated_at' => time()
+            $email = Helper::randomChar(6) . '@' . $request->input('email_suffix');
+            $usersData[] = [
+                'email' => $email,
+                'password' => $request->input('password') ?? $email,
+                'plan_id' => $request->input('plan_id'),
+                'expired_at' => $request->input('expired_at'),
             ];
-            $user['password'] = password_hash($request->input('password') ?? $user['email'], PASSWORD_DEFAULT);
-            array_push($users, $user);
         }
+
+
+
         try {
             DB::beginTransaction();
-            if (!User::insert($users)) {
-                throw new \Exception();
+            $users = [];
+            foreach ($usersData as $userData) {
+                $user = $userService->createUser($userData);
+                $user->save();
+                $users[] = $user;
             }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error($e);
             return $this->fail([500, '生成失败']);
         }
-        $data = "账号,密码,过期时间,UUID,创建时间,订阅地址\r\n";
-        foreach ($users as $user) {
-            $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
-            $createDate = date('Y-m-d H:i:s', $user['created_at']);
-            $password = $request->input('password') ?? $user['email'];
-            $subscribeUrl = Helper::getSubscribeUrl('/api/v1/client/subscribe?token=' . $user['token']);
-            $data .= "{$user['email']},{$password},{$expireDate},{$user['uuid']},{$createDate},{$subscribeUrl}\r\n";
+
+        // 判断是否导出 CSV
+        if ($request->input('download_csv')) {
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="users.csv"',
+            ];
+            $callback = function () use ($users, $request) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['账号', '密码', '过期时间', 'UUID', '创建时间', '订阅地址']);
+                foreach ($users as $user) {
+                    $user = $user->refresh();
+                    $expireDate = $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']);
+                    $createDate = date('Y-m-d H:i:s', $user['created_at']);
+                    $password = $request->input('password') ?? $user['email'];
+                    $subscribeUrl = Helper::getSubscribeUrl($user['token']);
+                    fputcsv($handle, [$user['email'], $password, $expireDate, $user['uuid'], $createDate, $subscribeUrl]);
+                }
+                fclose($handle);
+            };
+            return response()->streamDownload($callback, 'users.csv', $headers);
         }
-        echo $data;
+
+        // 默认返回 JSON
+        $data = collect($users)->map(function ($user) use ($request) {
+            return [
+                'email' => $user['email'],
+                'password' => $request->input('password') ?? $user['email'],
+                'expired_at' => $user['expired_at'] === NULL ? '长期有效' : date('Y-m-d H:i:s', $user['expired_at']),
+                'uuid' => $user['uuid'],
+                'created_at' => date('Y-m-d H:i:s', $user['created_at']),
+                'subscribe_url' => Helper::getSubscribeUrl($user['token']),
+            ];
+        });
+        return response()->json([
+            'code' => 0,
+            'message' => '批量生成成功',
+            'data' => $data,
+        ]);
     }
 
     public function sendMail(UserSendMail $request)

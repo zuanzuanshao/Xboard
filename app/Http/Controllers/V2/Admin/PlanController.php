@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\V2\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\PlanSave;
 use App\Models\Order;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PlanController extends Controller
 {
@@ -17,33 +19,31 @@ class PlanController extends Controller
             ->with([
                 'group:id,name'
             ])
-            ->withCount('users')
+            ->withCount([
+                'users',
+                'users as active_users_count' => function ($query) {
+                    $query->where(function ($q) {
+                        $q->where('expired_at', '>', time())
+                          ->orWhereNull('expired_at');
+                    });
+                }
+            ])
             ->get();
 
         return $this->success($plans);
     }
 
-    public function save(Request $request)
+    public function save(PlanSave $request)
     {
-        $params = $request->validate([
-            'id' => 'nullable|integer',
-            'name' => 'required|string',
-            'content' => 'nullable|string',
-            'reset_traffic_method' => 'integer|nullable',
-            'transfer_enable' => 'integer|required',
-            'prices' => 'array|nullable',
-            'group_id' => 'integer|nullable',
-            'speed_limit' => 'integer|nullable',
-            'device_limit' => 'integer|nullable',
-            'capacity_limit' => 'integer|nullable',
-        ]);
+        $params = $request->validated();
+        
         if ($request->input('id')) {
             $plan = Plan::find($request->input('id'));
             if (!$plan) {
                 return $this->fail([400202, '该订阅不存在']);
             }
+            
             DB::beginTransaction();
-            // update user group id and transfer
             try {
                 if ($request->input('force_update')) {
                     User::where('plan_id', $plan->id)->update([
@@ -58,7 +58,7 @@ class PlanController extends Controller
                 return $this->success(true);
             } catch (\Exception $e) {
                 DB::rollBack();
-                \Log::error($e);
+                Log::error($e);
                 return $this->fail([500, '保存失败']);
             }
         }
@@ -76,12 +76,12 @@ class PlanController extends Controller
         if (User::where('plan_id', $request->input('id'))->first()) {
             return $this->fail([400201, '该订阅下存在用户无法删除']);
         }
-        if ($request->input('id')) {
-            $plan = Plan::find($request->input('id'));
-            if (!$plan) {
-                return $this->fail([400202, '该订阅不存在']);
-            }
+        
+        $plan = Plan::find($request->input('id'));
+        if (!$plan) {
+            return $this->fail([400202, '该订阅不存在']);
         }
+        
         return $this->success($plan->delete());
     }
 
@@ -101,7 +101,7 @@ class PlanController extends Controller
         try {
             $plan->update($updateData);
         } catch (\Exception $e) {
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '保存失败']);
         }
 
@@ -124,7 +124,7 @@ class PlanController extends Controller
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error($e);
+            Log::error($e);
             return $this->fail([500, '保存失败']);
         }
         return $this->success(true);

@@ -2,26 +2,25 @@
 
 namespace App\Protocols;
 
-use App\Models\ServerHysteria;
 use App\Utils\Helper;
-use App\Contracts\ProtocolInterface;
+use App\Support\AbstractProtocol;
 
-class Shadowrocket implements ProtocolInterface
+class Shadowrocket extends AbstractProtocol
 {
     public $flags = ['shadowrocket'];
-    private $servers;
-    private $user;
 
-    public function __construct($user, $servers)
-    {
-        $this->user = $user;
-        $this->servers = $servers;
-    }
-
-    public function getFlags(): array
-    {
-        return $this->flags;
-    }
+    protected $protocolRequirements = [
+        'shadowrocket' => [
+            'hysteria' => [
+                'protocol_settings.version' => [
+                    '2' => '1993'
+                ],
+            ],
+            'anytls' => [
+                'base_version' => '2592'
+            ],
+        ],
+    ];
 
     public function handle()
     {
@@ -51,8 +50,18 @@ class Shadowrocket implements ProtocolInterface
             if ($item['type'] === 'hysteria') {
                 $uri .= self::buildHysteria($user['uuid'], $item);
             }
+            if ($item['type'] === 'tuic') {
+                $uri .= self::buildTuic($user['uuid'], $item);
+            }
+            if ($item['type'] === 'anytls') {
+                $uri .= self::buildAnyTLS($user['uuid'], $item);
+            }
+            if ($item['type'] === 'socks') {
+                $uri .= self::buildSocks($user['uuid'], $item);
+            }
         }
-        return base64_encode($uri);
+        return response(base64_encode($uri))
+            ->header('content-type', 'text/plain');
     }
 
 
@@ -69,10 +78,10 @@ class Shadowrocket implements ProtocolInterface
         $addr = Helper::wrapIPv6($server['host']);
 
         $uri = "ss://{$str}@{$addr}:{$server['port']}";
-        if ($protocol_settings['obfs'] == 'http') {
-            $obfs_host = data_get($protocol_settings, 'obfs_settings.obfs-host');
-            $obfs_path = data_get($protocol_settings, 'obfs_settings.obfs-path');
-            $uri .= "?plugin=obfs-local;obfs=http;obfs-host={$obfs_host};obfs-uri={$obfs_path}";
+        $plugin = data_get($protocol_settings, 'plugin') == 'obfs' ? 'obfs-local' : data_get($protocol_settings, 'plugin');
+        $plugin_opts = data_get($protocol_settings, 'plugin_opts');
+        if ($plugin && $plugin_opts) {
+            $uri .= '/?' . 'plugin=' . $plugin . ';' . rawurlencode($plugin_opts);
         }
         return $uri . "#{$name}\r\n";
     }
@@ -89,9 +98,9 @@ class Shadowrocket implements ProtocolInterface
         if ($protocol_settings['tls']) {
             $config['tls'] = 1;
             if (data_get($protocol_settings, 'tls_settings')) {
-                if (data_get($protocol_settings, 'tls_settings.allow_insecure') && !empty(data_get($protocol_settings, 'tls_settings.allow_insecure')))
+                if (!!data_get($protocol_settings, 'tls_settings.allow_insecure'))
                     $config['allowInsecure'] = (int) data_get($protocol_settings, 'tls_settings.allow_insecure');
-                if (data_get($protocol_settings, 'tls_settings.server_name') && !empty(data_get($protocol_settings, 'tls_settings.server_name')))
+                if (!!data_get($protocol_settings, 'tls_settings.server_name'))
                     $config['peer'] = data_get($protocol_settings, 'tls_settings.server_name');
             }
         }
@@ -100,8 +109,8 @@ class Shadowrocket implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
                 }
                 break;
             case 'ws':
@@ -168,8 +177,8 @@ class Shadowrocket implements ProtocolInterface
             case 'tcp':
                 if (data_get($protocol_settings, 'network_settings.header.type', 'none') !== 'none') {
                     $config['obfs'] = data_get($protocol_settings, 'network_settings.header.type');
-                    $config['path'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
-                    $config['obfsParam'] = \Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
+                    $config['path'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.path', ['/']));
+                    $config['obfsParam'] = \Illuminate\Support\Arr::random(data_get($protocol_settings, 'network_settings.header.request.headers.Host', ['www.example.com']));
                 }
                 break;
             case 'ws':
@@ -225,6 +234,8 @@ class Shadowrocket implements ProtocolInterface
     public static function buildHysteria($password, $server)
     {
         $protocol_settings = $server['protocol_settings'];
+        $uri = ''; // 初始化变量
+
         switch (data_get($protocol_settings, 'version')) {
             case 1:
                 $params = [
@@ -263,8 +274,12 @@ class Shadowrocket implements ProtocolInterface
                     $params['obfs-password'] = data_get($protocol_settings, 'obfs.password');
                 }
                 $params['insecure'] = data_get($protocol_settings, 'tls.allow_insecure');
-                if (isset($server['ports']))
+                if (isset($protocol_settings['hop_interval'])) {
+                    $params['keepalive'] = $protocol_settings['hop_interval'];
+                }
+                if (isset($server['ports'])) {
                     $params['mport'] = $server['ports'];
+                }
                 $query = http_build_query($params);
                 $addr = Helper::wrapIPv6($server['host']);
 
@@ -272,6 +287,47 @@ class Shadowrocket implements ProtocolInterface
                 $uri .= "\r\n";
                 break;
         }
+        return $uri;
+    }
+    public static function buildTuic($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $name = rawurlencode($server['name']);
+        $params = [
+            'alpn' => data_get($protocol_settings, 'alpn'),
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+        ];
+        if (data_get($protocol_settings, 'version') === 4) {
+            $params['token'] = $password;
+        } else {
+            $params['uuid'] = $password;
+            $params['password'] = $password;
+        }
+        $query = http_build_query($params);
+        $uri = "tuic://{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildAnyTLS($password, $server)
+    {
+        $protocol_settings = $server['protocol_settings'];
+        $name = rawurlencode($server['name']);
+        $params = [
+            'sni' => data_get($protocol_settings, 'tls.server_name'),
+            'insecure' => data_get($protocol_settings, 'tls.allow_insecure')
+        ];
+        $query = http_build_query($params);
+        $uri = "anytls://{$password}@{$server['host']}:{$server['port']}?{$query}#{$name}";
+        $uri .= "\r\n";
+        return $uri;
+    }
+
+    public static function buildSocks($password, $server)
+    {
+        $uri = "socks://" . base64_encode("{$password}:{$password}@{$server['host']}:{$server['port']}") . "?method=auto";
+        $uri .= "\r\n";
         return $uri;
     }
 }

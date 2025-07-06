@@ -40,7 +40,7 @@ class UpdateService
                 list($date, $hash) = explode(':', trim($result->output()));
                 Cache::forever(self::CACHE_VERSION_DATE, $date);
                 Cache::forever(self::CACHE_VERSION, substr($hash, 0, 7));
-                Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
+                // Log::info('Version cache updated: ' . $date . '-' . substr($hash, 0, 7));
                 return;
             }
         } catch (\Exception $e) {
@@ -387,7 +387,7 @@ class UpdateService
                 Log::info('Restarting Octane server after update...');
                 // Update version cache before restart
                 $this->updateVersionCache();
-                Process::run('php artisan octane:reload');
+                Process::run('php artisan octane:stop');
                 Log::info('Octane server restarted successfully.');
             } else {
                 Log::info('Octane is not running, skipping restart.');

@@ -35,16 +35,16 @@ class Kernel extends ConsoleKernel
         $schedule->command('check:commission')->everyMinute()->onOneServer();
         $schedule->command('check:ticket')->everyMinute()->onOneServer();
         // reset
-        $schedule->command('reset:traffic')->daily()->onOneServer();
+        $schedule->command('reset:traffic')->everyMinute()->onOneServer();
         $schedule->command('reset:log')->daily()->onOneServer();
         // send
-        $schedule->command('send:remindMail')->dailyAt('11:30')->onOneServer();
+        $schedule->command('send:remindMail', ['--force'])->dailyAt('11:30')->onOneServer();
         // horizon metrics
         $schedule->command('horizon:snapshot')->everyFiveMinutes()->onOneServer();
         // backup Timing
-        if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
-            $schedule->command('backup:database', ['true'])->daily()->onOneServer();
-        }
+        // if (env('ENABLE_AUTO_BACKUP_AND_UPDATE', false)) {
+        //     $schedule->command('backup:database', ['true'])->daily()->onOneServer();
+        // }
         // 每分钟清理过期的在线状态
         $schedule->call(function () {
             app(UserOnlineService::class)->cleanExpiredOnlineStatus();

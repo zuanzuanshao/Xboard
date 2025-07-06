@@ -162,6 +162,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "orderManagement": "Order Management",
     "couponManagement": "Coupon Management",
     "userManagement": "User Management",
+    "trafficResetLogs": "Traffic Reset Logs",
     "ticketManagement": "Ticket Management"
   },
   "plugin": {
@@ -415,20 +416,60 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "description": "Enter the allowed email suffixes, one per line"
           }
         },
-        "recaptcha": {
+        "captcha": {
           "enable": {
-            "label": "Enable reCAPTCHA",
-            "description": "When enabled, users will need to pass reCAPTCHA verification when registering."
+            "label": "Enable Captcha",
+            "description": "When enabled, users will need to pass captcha verification when registering."
           },
-          "key": {
-            "label": "reCAPTCHA Key",
-            "placeholder": "Enter reCAPTCHA key",
-            "description": "Enter your reCAPTCHA key"
+          "type": {
+            "label": "Captcha Type",
+            "description": "Select the captcha service type to use",
+            "options": {
+              "recaptcha": "Google reCAPTCHA v2",
+              "recaptcha-v3": "Google reCAPTCHA v3",
+              "turnstile": "Cloudflare Turnstile"
+            }
           },
-          "siteKey": {
-            "label": "reCAPTCHA Site Key",
-            "placeholder": "Enter reCAPTCHA site key",
-            "description": "Enter your reCAPTCHA site key"
+          "recaptcha": {
+            "key": {
+              "label": "reCAPTCHA Key",
+              "placeholder": "Enter reCAPTCHA key",
+              "description": "Enter your reCAPTCHA key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA Site Key",
+              "placeholder": "Enter reCAPTCHA site key",
+              "description": "Enter your reCAPTCHA site key"
+            }
+          },
+          "recaptcha_v3": {
+            "secretKey": {
+              "label": "reCAPTCHA v3 Key",
+              "placeholder": "Enter reCAPTCHA v3 key",
+              "description": "Enter your reCAPTCHA v3 server key"
+            },
+            "siteKey": {
+              "label": "reCAPTCHA v3 Site Key",
+              "placeholder": "Enter reCAPTCHA v3 site key",
+              "description": "Enter your reCAPTCHA v3 site key"
+            },
+            "scoreThreshold": {
+              "label": "Score Threshold",
+              "placeholder": "0.5",
+              "description": "Set verification score threshold (0-1), higher scores indicate more likely human behavior"
+            }
+          },
+          "turnstile": {
+            "secretKey": {
+              "label": "Turnstile Key",
+              "placeholder": "Enter Turnstile key",
+              "description": "Enter your Cloudflare Turnstile key"
+            },
+            "siteKey": {
+              "label": "Turnstile Site Key",
+              "placeholder": "Enter Turnstile site key",
+              "description": "Enter your Cloudflare Turnstile site key"
+            }
           }
         },
         "registerLimit": {
@@ -443,8 +484,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Limit Duration",
-            "placeholder": "Enter limit duration in hours",
-            "description": "Duration of the registration limit in hours"
+            "placeholder": "Enter limit duration in minutes",
+            "description": "Duration of the registration limit in minutes"
           }
         },
         "passwordLimit": {
@@ -459,8 +500,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           },
           "expire": {
             "label": "Lock Duration",
-            "placeholder": "Enter lock duration in hours",
-            "description": "Duration of the account lock in hours"
+            "placeholder": "Enter lock duration in minutes",
+            "description": "Duration of the account lock in minutes"
           }
         }
       }
@@ -798,6 +839,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "surge": {
         "title": "Surge Template",
         "description": "Configure subscription template format for Surge"
+      },
+      "surfboard": {
+        "title": "Surfboard Template",
+        "description": "Configure subscription template format for Surfboard"
       }
     }
   },
@@ -862,6 +907,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
+    "close": "Close",
     "delete": {
       "success": "Deleted successfully",
       "failed": "Failed to delete"
@@ -1026,7 +1072,19 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "result": "Result",
         "duration": "Duration",
         "attempts": "Attempts",
-        "nextRetry": "Next Retry"
+        "nextRetry": "Next Retry",
+        "failedJobsDetailTitle": "Failed Jobs Details",
+        "viewFailedJobs": "View Failed Jobs",
+        "jobDetailTitle": "Job Details",
+        "time": "Time",
+        "queue": "Queue",
+        "name": "Job Name",
+        "exception": "Exception",
+        "noFailedJobs": "No failed jobs",
+        "connection": "Connection",
+        "payload": "Job Payload",
+        "viewDetail": "View Details",
+        "action": "Action"
       },
       "actions": {
         "retry": "Retry",
@@ -1037,6 +1095,67 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "empty": "No jobs in queue",
       "loading": "Loading queue status...",
       "error": "Failed to load queue status"
+    },
+    "systemLog": {
+      "title": "System Logs",
+      "description": "View system operation logs",
+      "viewAll": "View All",
+      "level": "Level",
+      "time": "Time",
+      "message": "Message",
+      "logTitle": "Title",
+      "method": "Method",
+      "action": "Action",
+      "context": "Context",
+      "search": "Search logs...",
+      "noLogs": "No logs available",
+      "noInfoLogs": "No info logs available",
+      "noWarningLogs": "No warning logs available",
+      "noErrorLogs": "No error logs available",
+      "noSearchResults": "No matching logs found",
+      "detailTitle": "Log Details",
+      "viewDetail": "View Details",
+      "host": "Host",
+      "ip": "IP Address",
+      "uri": "URI",
+      "requestData": "Request Data",
+      "exception": "Exception",
+      "totalLogs": "Total logs",
+      "tabs": {
+        "all": "All",
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error"
+      },
+      "filter": {
+        "searchAndLevel": "Filter results: {{count}} logs containing \\\"{{keyword}}\\\" with level \\\"{{level}}\\\"",
+        "searchOnly": "Search results: {{count}} logs containing \\\"{{keyword}}\\\"",
+        "levelOnly": "Filter results: {{count}} logs with level \\\"{{level}}\\\"",
+        "reset": "Reset Filters"
+      },
+      "clearLogs": "Clear Logs",
+      "clearDays": "Clear Days",
+      "clearDaysDesc": "Clear logs older than how many days (0-365 days, 0 means today)",
+      "clearLevel": "Log Level",
+      "clearLimit": "Batch Limit",
+      "clearLimitDesc": "Batch clear quantity limit (100-10000 records)",
+      "clearPreview": "Clear Preview",
+      "getStats": "Get Statistics",
+      "cutoffDate": "Cutoff Date",
+      "willClear": "Will Clear",
+      "logsUnit": " logs",
+      "clearWarning": "This operation cannot be undone, please proceed with caution!",
+      "clearing": "Clearing...",
+      "confirmClear": "Confirm Clear",
+      "clearSuccess": "Clear completed! {{count}} logs cleared",
+      "clearFailed": "Clear failed",
+      "getStatsFailed": "Failed to get clear statistics",
+      "clearLogsFailed": "Failed to clear logs"
+    },
+    "common": {
+      "refresh": "Refresh",
+      "close": "Close",
+      "pagination": "Page {{current}}/{{total}}, {{count}} items total"
     },
     "search": {
       "placeholder": "Search menus and functions...",
@@ -1156,6 +1275,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "basicInfo": "Basic Information",
       "amountInfo": "Amount Information",
       "timeInfo": "Time Information",
+      "commissionInfo": "Commission Information",
+      "commissionStatusActive": "Active",
       "addOrder": "Add Order",
       "assignOrder": "Assign Order",
       "fields": {
@@ -1169,7 +1290,12 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "refundAmount": "Refund Amount",
         "deductionAmount": "Deduction Amount",
         "createdAt": "Created At",
-        "updatedAt": "Updated At"
+        "updatedAt": "Updated At",
+        "commissionStatus": "Commission Status",
+        "commissionAmount": "Commission Amount",
+        "actualCommissionAmount": "Actual Commission",
+        "inviteUser": "Inviter",
+        "inviteUserId": "Inviter ID"
       },
       "placeholders": {
         "email": "Please enter user email",
@@ -1286,6 +1412,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "error": {
         "saveFailed": "Failed to save coupon"
+      },
+      "timeRange": {
+        "quickSet": "Quick Set",
+        "presets": {
+          "1week": "1 Week",
+          "2weeks": "2 Weeks",
+          "1month": "1 Month",
+          "3months": "3 Months",
+          "6months": "6 Months",
+          "1year": "1 Year"
+        }
       }
     },
     "period": {
@@ -1510,6 +1647,17 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "tooltip": "Groups that can subscribe to this node",
         "empty": "--"
       },
+      "loadStatus": {
+        "title": "Load Status",
+        "tooltip": "Server resource usage",
+        "noData": "No Data",
+        "details": "System Load Details",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "swap": "Swap Usage",
+        "disk": "Disk Usage",
+        "lastUpdate": "Last Updated"
+      },
       "type": "Type",
       "actions": "Actions",
       "copyAddress": "Copy Connection Address",
@@ -1551,8 +1699,26 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "error": "Please enter a valid name"
       },
       "rate": {
-        "label": "Rate",
-        "error": "Please enter a valid rate"
+        "label": "Base Rate",
+        "error": "Base rate is required",
+        "error_numeric": "Base rate must be a number",
+        "error_gte_zero": "Base rate must be greater than or equal to 0"
+      },
+      "dynamic_rate": {
+        "enable_label": "Enable Dynamic Rate",
+        "enable_description": "Set different rate multipliers based on time periods",
+        "rules_label": "Time Period Rules",
+        "add_rule": "Add Rule",
+        "rule_title": "Rule {{index}}",
+        "start_time": "Start Time",
+        "end_time": "End Time",
+        "multiplier": "Rate Multiplier",
+        "no_rules": "No rules yet, click the button above to add",
+        "start_time_error": "Start time is required",
+        "end_time_error": "End time is required",
+        "multiplier_error": "Rate multiplier is required",
+        "multiplier_error_numeric": "Rate multiplier must be a number",
+        "multiplier_error_gte_zero": "Rate multiplier must be greater than or equal to 0"
       },
       "code": {
         "label": "Custom Node ID",
@@ -1571,18 +1737,22 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       },
       "host": {
         "label": "Node Address",
-        "placeholder": "Please enter domain or IP"
+        "placeholder": "Please enter domain or IP",
+        "error": "Node address is required"
       },
       "port": {
         "label": "Connection Port",
         "placeholder": "User connection port",
         "tooltip": "The port that users actually connect to, this is the port number that needs to be filled in the client configuration. If using transit or tunnel, this port may be different from the port that the server actually listens on.",
-        "sync": "Sync to server port"
+        "sync": "Sync to server port",
+        "error": "Connection port is required"
       },
       "server_port": {
         "label": "Server Port",
-        "placeholder": "Server listening port",
-        "tooltip": "The port that the server actually listens on, this is the real port opened on the server. If using transit or tunnel, this port may be different from the user connection port."
+        "placeholder": "Enter server port",
+        "error": "Server port is required",
+        "tooltip": "The actual listening port on the server.",
+        "sync": "Sync to server port"
       },
       "parent": {
         "label": "Parent Node",
@@ -1772,6 +1942,83 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
             "empty": "No ALPN Protocols Available"
           }
         }
+      },
+      "socks": {
+        "version": {
+          "label": "Protocol Version",
+          "placeholder": "Select SOCKS Version"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled"
+        },
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Leave empty if not used"
+          },
+          "allow_insecure": "Allow Insecure?"
+        },
+        "network": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        }
+      },
+      "naive": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "http": {
+        "tls_settings": {
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        },
+        "tls": {
+          "label": "TLS",
+          "placeholder": "Please select security",
+          "disabled": "Disabled",
+          "enabled": "Enabled",
+          "server_name": {
+            "label": "Server Name Indication (SNI)",
+            "placeholder": "Used for certificate verification when domain differs from node address"
+          },
+          "allow_insecure": "Allow Insecure"
+        }
+      },
+      "mieru": {
+        "transport": {
+          "label": "Transport Protocol",
+          "placeholder": "Select transport protocol"
+        },
+        "multiplexing": {
+          "label": "Multiplexing",
+          "placeholder": "Select multiplexing level",
+          "MULTIPLEXING_OFF": "Disabled",
+          "MULTIPLEXING_LOW": "Low",
+          "MULTIPLEXING_MIDDLE": "Medium",
+          "MULTIPLEXING_HIGH": "High"
+        }
       }
     },
     "network_settings": {
@@ -1846,6 +2093,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "orders": "Orders",
         "invites": "Invites",
         "traffic_records": "Traffic Records",
+        "reset_traffic": "Reset Traffic",
         "delete": "Delete",
         "delete_confirm_title": "Confirm Delete User",
         "delete_confirm_description": "This action will permanently delete user {{email}} and all associated data, including orders, coupons, traffic records, and support tickets. This action cannot be undone. Do you want to continue?"
@@ -1922,7 +2170,8 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "generate_count_placeholder": "Enter count for batch generation",
         "cancel": "Cancel",
         "submit": "Generate",
-        "success": "Generated successfully"
+        "success": "Generated successfully",
+        "download_csv": "Export as CSV file"
       }
     },
     "edit": {
@@ -1981,6 +2230,7 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
       "title": "Actions",
       "send_email": "Send Email",
       "export_csv": "Export CSV",
+      "traffic_reset_stats": "Traffic Reset Stats",
       "batch_ban": "Batch Ban",
       "confirm_ban": {
         "title": "Confirm Batch Ban",
@@ -2006,6 +2256,117 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
         "success": "Email sent successfully",
         "failed": "Failed to send email",
         "required_fields": "Please fill in all required fields"
+      }
+    },
+    "traffic_reset": {
+      "title": "Traffic Reset",
+      "description": "Reset traffic usage for user {{email}}",
+      "tabs": {
+        "reset": "Reset Traffic",
+        "history": "Reset History"
+      },
+      "user_info": "User Information",
+      "warning": {
+        "title": "Important Notice",
+        "irreversible": "Traffic reset operation is irreversible, please proceed with caution",
+        "reset_to_zero": "After reset, user's upload and download traffic will be cleared to zero",
+        "logged": "All reset operations will be logged in the system"
+      },
+      "reason": {
+        "label": "Reset Reason",
+        "placeholder": "Please enter the reason for traffic reset (optional)",
+        "optional": "This field is optional and used to record the reason for reset"
+      },
+      "confirm_reset": "Confirm Reset",
+      "resetting": "Resetting...",
+      "reset_success": "Traffic reset successful",
+      "reset_failed": "Traffic reset failed",
+      "history": {
+        "summary": "Reset Overview",
+        "reset_count": "Reset Count",
+        "last_reset": "Last Reset",
+        "next_reset": "Next Reset",
+        "never": "Never Reset",
+        "no_schedule": "No Scheduled Reset",
+        "records": "Reset Records",
+        "recent_records": "Recent 10 Reset Records",
+        "no_records": "No reset records",
+        "reset_time": "Reset Time",
+        "traffic_cleared": "Traffic Cleared"
+      },
+      "stats": {
+        "title": "Traffic Reset Statistics",
+        "description": "View system traffic reset statistics",
+        "time_range": "Statistics Time Range",
+        "total_resets": "Total Resets",
+        "auto_resets": "Auto Resets",
+        "manual_resets": "Manual Resets",
+        "cron_resets": "Cron Resets",
+        "in_period": "In the last {{days}} days",
+        "breakdown": "Reset Type Breakdown",
+        "breakdown_description": "Percentage breakdown of different reset operation types",
+        "auto_percentage": "Auto Reset Percentage",
+        "manual_percentage": "Manual Reset Percentage",
+        "cron_percentage": "Cron Reset Percentage",
+        "days_options": {
+          "week": "Last Week",
+          "month": "Last Month",
+          "quarter": "Last Quarter",
+          "year": "Last Year"
+        }
+      }
+    },
+    "traffic_reset_logs": {
+      "title": "Traffic Reset Logs",
+      "description": "View detailed records of all traffic reset operations in the system",
+      "columns": {
+        "id": "Log ID",
+        "user": "User",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "cleared_traffic": "Cleared Traffic",
+        "cleared": "Cleared",
+        "upload": "Upload",
+        "download": "Download",
+        "reset_time": "Reset Time",
+        "log_time": "Log Time"
+      },
+      "filters": {
+        "search_user": "Search user email...",
+        "reset_type": "Reset Type",
+        "trigger_source": "Trigger Source",
+        "all_types": "All Types",
+        "all_sources": "All Sources",
+        "start_date": "Start Date",
+        "end_date": "End Date",
+        "apply_date": "Apply Filter",
+        "reset": "Reset Filter",
+        "filter_title": "Filter Options",
+        "filter_description": "Set filter conditions to find specific traffic reset records",
+        "reset_types": {
+          "monthly": "Monthly Reset",
+          "first_day_month": "First Day of Month Reset",
+          "yearly": "Yearly Reset",
+          "first_day_year": "First Day of Year Reset",
+          "manual": "Manual Reset"
+        },
+        "trigger_sources": {
+          "auto": "Auto Trigger",
+          "manual": "Manual Trigger",
+          "cron": "Cron Job"
+        }
+      },
+      "actions": {
+        "export": "Export Logs",
+        "exporting": "Exporting...",
+        "export_success": "Export successful",
+        "export_failed": "Export failed"
+      },
+      "trigger_descriptions": {
+        "manual": "Manually executed traffic reset by administrator",
+        "cron": "Automatically executed by system scheduled task",
+        "auto": "Automatically triggered by system based on conditions",
+        "other": "Triggered by other methods"
       }
     },
     "send_mail": {
@@ -2110,6 +2471,10 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "placeholder": "Enter capacity limit",
           "unit": "Users"
         },
+        "tags": {
+          "label": "Tags",
+          "placeholder": "Enter a tag and press Enter to confirm"
+        },
         "reset_method": {
           "label": "Traffic Reset Method",
           "placeholder": "Select reset method",
@@ -2148,6 +2513,9 @@ window.XBOARD_TRANSLATIONS['en-US'] = {
           "success": {
             "add": "Plan added successfully",
             "update": "Plan updated successfully"
+          },
+          "error": {
+            "validation": "Form validation failed. Please check for errors and try again."
           }
         }
       },
