@@ -11,9 +11,6 @@ services:
       - ./entrypoint.sh:/www/entrypoint.sh
     environment:
       - docker=true
-      - ENABLE_SQLITE=true
-      - ENABLE_REDIS=true
-      - ADMIN_ACCOUNT=admin@demo.com
     depends_on:
       - redis
     # network_mode: host

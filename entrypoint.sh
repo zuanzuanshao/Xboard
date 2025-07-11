@@ -4,13 +4,7 @@ LOCK_FILE=/www/storage/installed.lock
 
 if [ ! -f "$LOCK_FILE" ]; then
   echo "🚀 Running XBoard installation..."
-  INSTALL_CMD="php artisan xboard:install --admin=${ADMIN_ACCOUNT:-admin@demo.com}"
-
-  [ "$ENABLE_SQLITE" = "true" ] && INSTALL_CMD="$INSTALL_CMD --sqlite"
-  [ "$ENABLE_REDIS" = "true" ] && INSTALL_CMD="$INSTALL_CMD --redis"
-
-  eval $INSTALL_CMD
-
+  ENABLE_SQLITE=true ENABLE_REDIS=true ADMIN_ACCOUNT=admin@demo.com php artisan xboard:install --admin=admin@demo.com
   touch "$LOCK_FILE"
 else
   echo "✅ Already installed. Skipping install."
