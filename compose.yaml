@@ -8,12 +8,16 @@ services:
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
       - ./plugins:/www/plugins
+      - ./entrypoint.sh:/www/entrypoint.sh
     environment:
       - docker=true
+      - ENABLE_SQLITE=true
+      - ENABLE_REDIS=true
+      - ADMIN_ACCOUNT=admin@demo.com
     depends_on:
       - redis
     # network_mode: host
-    command: php artisan octane:start --host=0.0.0.0 --port=7001
+    command: ["/bin/bash", "/www/entrypoint.sh"]
     restart: on-failure
     ports:
       - 7001:7001
