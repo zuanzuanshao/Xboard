@@ -3,5 +3,8 @@
   "compose": {
     "type": "docker-compose",
     "file": "compose.yaml"
+  },
+  "hooks": {
+    "beforeDeploy": "docker compose run --rm -e ENABLE_SQLITE=true -e ENABLE_REDIS=true -e ADMIN_ACCOUNT=admin@demo.com web php artisan xboard:install"
   }
 }

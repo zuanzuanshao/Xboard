@@ -8,17 +8,15 @@ services:
       - ./storage/logs:/www/storage/logs
       - ./storage/theme:/www/storage/theme
       - ./plugins:/www/plugins
-      - ./entrypoint.sh:/www/entrypoint.sh # 👈 挂载入口脚本
     environment:
       - docker=true
-      - ADMIN_ACCOUNT=support@premiumlinks.net # 👈 安装时使用的管理员邮箱
     depends_on:
       - redis
+    # network_mode: host
+    command: php artisan octane:start --host=0.0.0.0 --port=7001
     restart: on-failure
     ports:
       - 7001:7001
-    command: ["/bin/bash", "/www/entrypoint.sh"] # 👈 启动脚本代替原有命令
-
   horizon:
     image: ghcr.io/zuanzuanshao/xboard:new
     volumes:
@@ -28,10 +26,10 @@ services:
       - ./storage/logs:/www/storage/logs
       - ./plugins:/www/plugins
     restart: on-failure
+    # network_mode: host
+    command: php artisan horizon
     depends_on:
       - redis
-    command: php artisan horizon
-
   redis:
     image: redis:7-alpine
     command: redis-server --unixsocket /data/redis.sock --unixsocketperm 777 --save 900 1 --save 300 10 --save 60 10000
