@@ -1,6 +1,13 @@
-#!/bin/bash
+#!/bin/sh
 
 LOCK_FILE=/www/storage/installed.lock
+
+# Wait for Redis to be ready
+echo "⏳ Waiting for Redis..."
+while ! redis-cli -s /data/redis.sock ping 2>/dev/null; do
+  sleep 2
+done
+echo "✅ Redis is ready!"
 
 if [ ! -f "$LOCK_FILE" ]; then
   echo "🚀 Running XBoard installation..."

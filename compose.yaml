@@ -14,7 +14,7 @@ services:
     depends_on:
       - redis
     # network_mode: host
-    command: ["/bin/bash", "/www/entrypoint.sh"]
+    command: ["/bin/sh", "/www/entrypoint.sh"]
     restart: on-failure
     ports:
       - 7001:7001
