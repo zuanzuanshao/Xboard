@@ -152,17 +152,21 @@ class StripeALLInOne implements PaymentInterface
     public function notify($params): array|bool
     {
         try {
+            \Log::info("Stripe notify started", ['has_webhook_key' => !empty($this->config['stripe_webhook_key'])]);
             \Stripe\Stripe::setApiKey($this->config['stripe_sk_live']);
             //获取原始POST数据用于Stripe签名验证
             $payload = $params['raw_body'] ?? file_get_contents('php://input');
+            \Log::info("Stripe payload", ['payload_length' => strlen($payload)]);
             $headers = getallheaders();
             $headerName = 'Stripe-Signature';
             $signatureHeader = $headers[$headerName] ?? '';
+            \Log::info("Stripe signature", ['has_signature' => !empty($signatureHeader)]);
             $event = \Stripe\Webhook::constructEvent(
                 $payload,
                 $signatureHeader,
                 $this->config['stripe_webhook_key']
             );
+            \Log::info("Stripe webhook event", ['type' => $event->type]);
 
         } catch (\UnexpectedValueException $e){
             throw new ApiException('Error parsing payload', 400);
