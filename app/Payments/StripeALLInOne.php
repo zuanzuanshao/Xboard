@@ -39,8 +39,14 @@ class StripeALLInOne implements PaymentInterface
             ],
             'payment_method' => [
                 'label' => '支付方式',
-                'description' => '请输入alipay, wechat_pay, cards',
-                'type' => 'input',
+                'description' => '选择支付方式',
+                'type' => 'select',
+                'select_options' => [
+                    'alipay' => '支付宝 (Alipay)',
+                    'wechat_pay' => '微信支付 (WeChat Pay)',
+                    'cards' => '信用卡/借记卡 (Cards)',
+                ],
+                'default' => 'cards'
             ]
         ];
     }
