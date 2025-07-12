@@ -17,7 +17,9 @@ class PaymentController extends Controller
     {
         try {
             $paymentService = new PaymentService($method, null, $uuid);
-            $verify = $paymentService->notify($request->input());
+            $params = $request->input();
+            $params['raw_body'] = $request->getContent();
+            $verify = $paymentService->notify($params);
             if (!$verify)
                 return $this->fail([422, 'verify error']);
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {

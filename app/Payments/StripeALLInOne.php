@@ -153,8 +153,8 @@ class StripeALLInOne implements PaymentInterface
     {
         try {
             \Stripe\Stripe::setApiKey($this->config['stripe_sk_live']);
-            //Workerman不支持使用php://input, stripe同时要求验证签名的payload不能经过修改，所以使用这个方法
-            $payload = $GLOBALS['HTTP_RAW_POST_DATA'];
+            //获取原始POST数据用于Stripe签名验证
+            $payload = $params['raw_body'] ?? file_get_contents('php://input');
             $headers = getallheaders();
             $headerName = 'Stripe-Signature';
             $signatureHeader = $headers[$headerName] ?? '';
