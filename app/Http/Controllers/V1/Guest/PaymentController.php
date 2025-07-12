@@ -16,19 +16,28 @@ class PaymentController extends Controller
     public function notify($method, $uuid, Request $request)
     {
         try {
+            \Log::info("Payment notify started", ['method' => $method, 'uuid' => $uuid]);
             $paymentService = new PaymentService($method, null, $uuid);
             $params = $request->input();
             $params['raw_body'] = $request->getContent();
+            \Log::info("Payment params prepared", ['has_raw_body' => !empty($params['raw_body'])]);
             $verify = $paymentService->notify($params);
+            \Log::info("Payment verify result", ['verify' => $verify]);
             if (!$verify)
                 return $this->fail([422, 'verify error']);
             if (!$this->handle($verify['trade_no'], $verify['callback_no'])) {
                 return $this->fail([400, 'handle error']);
             }
+            \Log::info("Payment notify success");
             return (isset($verify['custom_result']) ? $verify['custom_result'] : 'success');
         } catch (\Exception $e) {
-            \Log::error($e);
-            return $this->fail([500, 'fail']);
+            \Log::error("Payment notify error: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'status' => 'fail', 
+                'message' => $e->getMessage(),
+                'data' => null,
+                'error' => get_class($e)
+            ], 500);
         }
     }
 
