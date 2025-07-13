@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => 'mysql',
+    'default' => 'stack',
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily'],
+            'channels' => ['daily', 'mysql'], // 把 mysql 也加入进来
             'ignore_exceptions' => false,
         ],
 
