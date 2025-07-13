@@ -174,6 +174,19 @@ class StripeALLInOne implements PaymentInterface
                 $this->config['stripe_webhook_key']
             );
             \Log::info("Stripe webhook event", ['type' => $event->type]);
+            \Log::info("Stripe webhook raw data", [
+                'event_id' => $event->id,
+                'event_created' => $event->created,
+                'raw_payload' => substr($payload, 0, 2000) // 只记录前2000字符避免日志过大
+            ]);
+            
+            // 记录完整的event数据结构
+            \Log::info("Stripe event data object", [
+                'object_type' => $event->data->object->object ?? 'unknown',
+                'object_id' => $event->data->object->id ?? 'unknown',
+                'object_status' => $event->data->object->status ?? 'unknown',
+                'object_metadata' => $event->data->object->metadata ?? []
+            ]);
 
         } catch (\UnexpectedValueException $e){
             throw new ApiException('Error parsing payload', 400);

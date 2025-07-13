@@ -17,6 +17,16 @@ class PaymentController extends Controller
     {
         try {
             \Log::info("Payment notify started", ['method' => $method, 'uuid' => $uuid]);
+            
+            // 记录完整的请求信息
+            \Log::info("Webhook request details", [
+                'method' => $request->method(),
+                'url' => $request->fullUrl(),
+                'headers' => $request->headers->all(),
+                'raw_body_length' => strlen($request->getContent()),
+                'raw_body_preview' => substr($request->getContent(), 0, 500)
+            ]);
+            
             $paymentService = new PaymentService($method, null, $uuid);
             $params = $request->input();
             $params['raw_body'] = $request->getContent();

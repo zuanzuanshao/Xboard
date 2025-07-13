@@ -41,7 +41,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['daily', 'mysql'], // 把 mysql 也加入进来
+            'channels' => ['daily', 'mysql'],
             'ignore_exceptions' => false,
         ],
 
