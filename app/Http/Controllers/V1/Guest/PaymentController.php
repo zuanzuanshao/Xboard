@@ -20,6 +20,7 @@ class PaymentController extends Controller
             $paymentService = new PaymentService($method, null, $uuid);
             $params = $request->input();
             $params['raw_body'] = $request->getContent();
+            $params['headers'] = $request->headers->all();
             \Log::info("Payment params prepared", ['has_raw_body' => !empty($params['raw_body'])]);
             $verify = $paymentService->notify($params);
             \Log::info("Payment verify result", ['verify' => $verify]);

@@ -157,9 +157,16 @@ class StripeALLInOne implements PaymentInterface
             //获取原始POST数据用于Stripe签名验证
             $payload = $params['raw_body'] ?? file_get_contents('php://input');
             \Log::info("Stripe payload", ['payload_length' => strlen($payload)]);
-            $headers = getallheaders();
-            $headerName = 'Stripe-Signature';
-            $signatureHeader = $headers[$headerName] ?? '';
+            // 从Laravel request headers中获取Stripe签名
+            if (isset($params['headers'])) {
+                $headers = $params['headers'];
+                $signatureHeader = $headers['stripe-signature'][0] ?? 
+                                  $headers['Stripe-Signature'][0] ?? 
+                                  '';
+            } else {
+                $headers = getallheaders();
+                $signatureHeader = $headers['Stripe-Signature'] ?? '';
+            }
             \Log::info("Stripe signature", ['has_signature' => !empty($signatureHeader)]);
             $event = \Stripe\Webhook::constructEvent(
                 $payload,
