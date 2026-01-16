@@ -10,7 +10,6 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\OrderService;
 use App\Services\PlanService;
-use App\Services\Plugin\HookManager;
 use App\Services\UserService;
 use App\Utils\Helper;
 use Illuminate\Http\Request;
@@ -155,10 +154,6 @@ class OrderController extends Controller
         if (!$orderService->paid('manual_operation')) {
             return $this->fail([500, '更新失败']);
         }
-
-        // Trigger payment success hook for plugins (e.g., MailNotify, Telegram)
-        HookManager::call('payment.notify.success', $order);
-
         return $this->success(true);
     }
 
